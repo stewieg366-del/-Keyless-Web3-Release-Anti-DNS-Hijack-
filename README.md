@@ -1,65 +1,104 @@
-# PS2 — Web3 Frontend Provenance & Anti-DNS-Hijack System
+# 🔐 Keyless Web3 Release — Anti-DNS Hijack
 
-## Project Overview
+**PS2** is a Web3 security system that cryptographically verifies a dApp frontend **before allowing wallet interaction**.
 
-The Web3 ecosystem currently relies on DNS and traditional web hosting to deliver dApp frontends to users. This creates a critical vulnerability: if DNS is hijacked or hosting is compromised, attackers can serve a modified, malicious frontend that looks legitimate but manipulates user transactions and wallet interactions.
+## Problem
 
-PS2 aims to solve this by providing **cryptographic provenance** for Web3 frontends. 
-The core idea: **DNS/HTTPS tells us where the frontend came from. Cryptographic provenance (via Sigstore) tells us whether the frontend is the authorized release.**
+A DNS or hosting compromise can replace a legitimate Web3 frontend with a malicious one.
 
-## Why This Matters
+**HTTPS alone does not prove that the frontend is the authorized release.**
 
-A legitimate dApp relies on the integrity of the downloaded interface. A malicious frontend can present identical UI elements while substituting addresses or modifying calldata before requesting a signature from MetaMask. This system allows clients to independently verify the frontend artifact against an expected, signed release before allowing any wallet connection.
+##  PS2 Solution
 
-## Current Implementation
-
-### Phase 1: Minimal Sepolia Web3 dApp
-- **Smart Contract:** A basic `PS2Counter` deployed on Ethereum Sepolia.
-- **Frontend:** A Vite/React TypeScript application that allows connecting a MetaMask wallet, reading the counter, and refreshing the state via read-only interactions.
-
-### Phase 2: Frontend Release Signing with Public Sigstore
-- **Deterministic Build:** A script that builds the frontend bundle and archives it.
-- **Provenance Manifest:** A `release.json` file capturing the application metadata and SHA-256 digest of the artifact.
-- **Cosign Keyless Signing:** Using the public Sigstore infrastructure (Fulcio, Rekor), the release artifact is signed by authenticating an ephemeral key via an OIDC identity provider (e.g., Google, GitHub).
-
-## How to Build and Sign a Release
-
-### Prerequisites
-- Node.js & npm
-- [Cosign](https://docs.sigstore.dev/cosign/installation/) (`brew install cosign`)
-
-### Steps
-1. Navigate to the `scripts` directory:
-   ```bash
-   cd scripts
-   ```
-2. Run the build and sign script:
-   ```bash
-   ./build-release.sh
-   ```
-3. Your browser will open to authenticate with an OIDC provider. Once authenticated, Cosign will generate a short-lived certificate via Fulcio, publish transparency evidence to Rekor, and generate the signature bundle.
-4. The artifacts (`frontend-release.tar.gz`, `release.json`, and signature files) will be placed in the `releases/v0.1.0/` directory.
-
-### Verifying the Release Manually
-
-To verify the signed release, you can use `cosign`:
-
-```bash
-cd releases/v0.1.0/
-cosign verify-blob \
-  --certificate frontend-release.tar.gz.pem \
-  --signature frontend-release.tar.gz.sig \
-  --certificate-identity <YOUR_OIDC_EMAIL> \
-  --certificate-oidc-issuer https://github.com/login/oauth \
-  frontend-release.tar.gz
+```text
+Frontend
+   ↓
+SHA-256
+   ↓
+Sigstore Keyless Verification
+   ↓
+Fulcio + Rekor
+   ↓
+VALID / INVALID / UNKNOWN
+   ↓
+Wallet Allowed / BLOCKED
 ```
-*(Adjust the `--certificate-identity` and `--certificate-oidc-issuer` depending on which provider you chose during signing. For Google, issuer is `https://accounts.google.com`)*
 
-## Future Architecture
+PS2 uses a **browser-extension-controlled, fail-closed wallet gate**. Unverified frontend wallet requests are blocked before reaching MetaMask.
 
-The following phases are planned for the complete architecture but are **not yet implemented**:
+##  Live Demo
 
-- **Phase 3: Sigstore Verification:** Programmatic verification of the digest, signature, Fulcio identity, and Rekor log.
-- **Phase 4: Browser Extension:** A client-side extension that intercepts the dApp load, hashes the downloaded frontend, verifies the Sigstore provenance, and warns the user if verification fails.
-- **Phase 5: Decentralized RPC Aggregation:** Sending transactions through multiple RPC providers and comparing state to prevent RPC-level censorship or manipulation.
-- **Phase 6: Frontend Availability Fallback:** Support for alternative hosting (IPFS, backups) if the primary HTTPS endpoint fails or serves a malicious artifact. (Fallback determines *where* we obtain the frontend. Cryptographic verification determines *whether we trust it*).
+### 1. Legitimate Frontend
+
+```text
+✓ PS2 VERIFIED
+Sigstore: VALID
+Rekor: VERIFIED
+```
+
+### 2. Simulated DNS/Hosting Attack
+
+A copy of the frontend is modified:
+
+```text
+PS2 Web3 Security Demo
+        ↓
+PS2 Web3 Security Demo — HACKED
+```
+
+The SHA-256 digest changes:
+
+```text
+Expected digest ≠ Actual digest
+```
+
+Result:
+
+```text
+ FRONTEND VERIFICATION FAILED
+DO NOT CONNECT YOUR WALLET.
+```
+
+### 3. Recovery
+
+PS2 can retrieve the authorized release from an independent source, verify it again, and restore the trusted frontend.
+
+##  Additional Security
+
+*  **Keyless Sigstore signing**
+*  **Rekor transparency verification**
+*  **Browser extension wallet gate**
+* **Independent frontend recovery**
+*  **Multi-RPC consensus**
+*  **Independent transaction receipt verification**
+*  **Automated verification tests**
+*  **No private keys handled by PS2**
+
+## ⛓️ Network
+
+**Ethereum Sepolia**
+
+Chain ID: `11155111`
+
+Contract:
+
+`0xaf8ce8203A15795cAA6C92b10B10e351c05dBb0F`
+
+## Public Sigstore Evidence
+
+Release digest:
+
+```text
+2400c6017562583ca99830790a6bdf5b7dcd3e1f4864c5b41aa921bddad086d2
+```
+
+View public transparency evidence:
+
+https://search.sigstore.dev/
+
+##  Core Idea
+
+> **Don't trust the website just because HTTPS works. Verify the frontend before trusting the wallet interaction.**
+
+**PS2 turns frontend provenance into a security boundary for Web3 wallets.**
+MADE BY TEAM VERENCE
