@@ -8,176 +8,69 @@ A DNS or hosting compromise can replace a legitimate Web3 frontend with a malici
 
 **HTTPS alone does not prove that the frontend is the authorized release.**
 
-````markdown
-# 🏗️ PS2 Architecture
+##  PS2 Architecture
 
-PS2 uses a client-side verification architecture that separates
-frontend delivery from frontend authenticity and wallet authorization.
+PS2 separates frontend delivery from frontend authenticity and wallet authorization.
 
 ```mermaid
 flowchart TD
+    A[Web3 Frontend] --> B[SHA-256 Digest]
+    B --> C[Sigstore Keyless Verification]
 
-    A["🌐 Web3 Frontend"] --> B["🔢 SHA-256<br/>Artifact Digest"]
+    C --> D[Fulcio Certificate]
+    C --> E[Rekor Transparency Log]
 
-    B --> C["🔐 Sigstore Keyless Verification"]
-
-    C --> D["📜 Fulcio<br/>Signing Certificate"]
-    C --> E["🧾 Rekor<br/>Transparency Log"]
-
-    D --> F["🛡️ PS2 Verification Engine"]
+    D --> F[PS2 Verification Engine]
     E --> F
 
-    F --> G{"Verification Result"}
+    F --> G{Verification Result}
 
-    G -->|VALID| H["✅ Trusted Frontend"]
-    G -->|INVALID| I["❌ Untrusted Frontend"]
-    G -->|UNKNOWN| J["⚠️ Verification Unavailable"]
+    G -->|VALID| H[Trusted Frontend]
+    G -->|INVALID| I[Untrusted Frontend]
+    G -->|UNKNOWN| J[Verification Unavailable]
 
-    H --> K["🔒 Browser Extension<br/>Wallet Security Gate"]
-
-    I --> L["🚫 Wallet BLOCKED"]
+    H --> K[Browser Extension Wallet Gate]
+    I --> L[Wallet BLOCKED]
     J --> L
 
-    K --> M["🦊 MetaMask"]
+    K --> M[MetaMask]
+    M --> N[Multi-RPC Verification]
 
-    M --> N["🌐 Multi-RPC Verification"]
+    N --> O[RPC 1 - PublicNode]
+    N --> P[RPC 2 - ETHPandaOps]
+    N --> Q[RPC 3 - Tenderly]
 
-    N --> O["RPC 1<br/>PublicNode"]
-    N --> P["RPC 2<br/>ETHPandaOps"]
-    N --> Q["RPC 3<br/>Tenderly"]
-
-    O --> R["⛓️ Ethereum Sepolia"]
+    O --> R[Ethereum Sepolia]
     P --> R
     Q --> R
 
-    R --> S["📄 PS2Counter"]
+    R --> S[PS2Counter]
+    S --> T[Independent Receipt Verification]
 
-    S --> T["🧾 Independent Receipt Verification"]
+    T --> U{Transaction Result}
 
-    T --> U{"Transaction Result"}
-
-    U -->|CONFIRMED| V["✅ Confirmed"]
-    U -->|REVERTED| W["❌ Reverted"]
-    U -->|INCONSISTENT| X["⚠️ Receipt Inconsistent"]
-
-    style A fill:#e8f1ff,stroke:#1565c0,stroke-width:2px
-    style B fill:#e8f1ff,stroke:#1565c0,stroke-width:2px
-    style C fill:#e8f1ff,stroke:#1565c0,stroke-width:2px
-    style D fill:#f5f5f5,stroke:#333,stroke-width:2px
-    style E fill:#f5f5f5,stroke:#333,stroke-width:2px
-    style F fill:#e8f1ff,stroke:#1565c0,stroke-width:3px
-    style G fill:#fff3cd,stroke:#b8860b,stroke-width:2px
-    style H fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style I fill:#ffebee,stroke:#c62828,stroke-width:2px
-    style J fill:#fff3cd,stroke:#b8860b,stroke-width:2px
-    style K fill:#e8f1ff,stroke:#1565c0,stroke-width:2px
-    style L fill:#ffebee,stroke:#c62828,stroke-width:2px
-    style M fill:#f5f5f5,stroke:#333,stroke-width:2px
-    style N fill:#e8f1ff,stroke:#1565c0,stroke-width:2px
-    style R fill:#e8f1ff,stroke:#1565c0,stroke-width:2px
-    style S fill:#f5f5f5,stroke:#333,stroke-width:2px
-    style T fill:#e8f1ff,stroke:#1565c0,stroke-width:2px
-    style U fill:#fff3cd,stroke:#b8860b,stroke-width:2px
-    style V fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style W fill:#ffebee,stroke:#c62828,stroke-width:2px
-    style X fill:#fff3cd,stroke:#b8860b,stroke-width:2px
-````
-
-### Architecture Flow
-
-```text
-Frontend
-   ↓
-SHA-256
-   ↓
-Sigstore Keyless Verification
-   ↓
-Fulcio + Rekor
-   ↓
-PS2 Verification Engine
-   ↓
-VALID / INVALID / UNKNOWN
-   ↓
-Browser Extension Wallet Gate
-   ↓
-ALLOW / BLOCK
-   ↓
-MetaMask
-   ↓
-Multi-RPC Verification
-   ↓
-Ethereum Sepolia
-   ↓
-PS2Counter
-   ↓
-Independent Receipt Verification
-   ↓
-CONFIRMED / REVERTED / INCONSISTENT
+    U -->|CONFIRMED| V[Confirmed]
+    U -->|REVERTED| W[Reverted]
+    U -->|INCONSISTENT| X[Receipt Inconsistent]
 ```
 
-The architecture has four major security layers:
+### Security Model
 
-1. **Frontend Provenance** — SHA-256 and Sigstore verify the release.
-2. **Client-Side Security** — the PS2 verification engine determines
-   whether the release is trusted.
-3. **Wallet Protection** — the browser extension blocks wallet
-   interaction from INVALID or UNKNOWN frontends.
-4. **Blockchain Verification** — multiple RPC providers and independent
-   receipt verification reduce reliance on a single blockchain data
-   source.
+PS2 uses a **browser-extension-controlled, fail-closed wallet gate**.
 
-````
+If the frontend cannot be cryptographically verified, wallet interaction is blocked before the request reaches MetaMask.
 
-### How to put it in GitHub
+The verification states are:
 
-Very simple:
+* **VALID** → frontend is trusted and wallet interaction can proceed.
+* **INVALID** → frontend is rejected and wallet interaction is blocked.
+* **UNKNOWN** → verification could not be established, so wallet interaction remains blocked.
 
-**1. Open your repository → `README.md`**
-
-**2. Click the pencil ✏️ Edit button.**
-
-**3. Paste the section wherever you want — ideally after your Problem/Solution section.**
-
-**4. Commit changes.**
-
-GitHub will automatically render:
-
-```text
-🌐 Web3 Frontend
-        ↓
-🔢 SHA-256
-        ↓
-🔐 Sigstore
-   ↙          ↘
-Fulcio       Rekor
-   ↘          ↙
-PS2 Verification
-        ↓
- VALID / INVALID / UNKNOWN
-        ↓
-Browser Extension
-        ↓
-   ALLOW / BLOCK
-        ↓
-     MetaMask
-        ↓
-   Multi-RPC
-        ↓
-Ethereum Sepolia
-        ↓
-   PS2Counter
-        ↓
-Receipt Verification
-````
-
-**You do NOT need to create or upload a PNG.** GitHub renders the `mermaid` block itself.
-
-
-PS2 uses a **browser-extension-controlled, fail-closed wallet gate**. Unverified frontend wallet requests are blocked before reaching MetaMask.
-
-##  Live Demo
+##  How PS2 Stops a Frontend Attack
 
 ### 1. Legitimate Frontend
+
+The authorized release is downloaded and verified.
 
 ```text
 ✓ PS2 VERIFIED
@@ -185,9 +78,11 @@ Sigstore: VALID
 Rekor: VERIFIED
 ```
 
-### 2. Simulated DNS/Hosting Attack
+The frontend's SHA-256 digest must match the trusted release metadata.
 
-A copy of the frontend is modified:
+### 2. Simulated DNS / Hosting Attack
+
+A copy of the legitimate frontend is modified:
 
 ```text
 PS2 Web3 Security Demo
@@ -195,72 +90,115 @@ PS2 Web3 Security Demo
 PS2 Web3 Security Demo — HACKED
 ```
 
-The SHA-256 digest changes:
+The modified frontend produces a different SHA-256 digest:
 
 ```text
 Expected digest ≠ Actual digest
 ```
 
-Result:
+PS2 detects the mismatch and blocks wallet interaction:
 
 ```text
- FRONTEND VERIFICATION FAILED
+FRONTEND VERIFICATION FAILED
 DO NOT CONNECT YOUR WALLET.
 ```
 
-📦 IPFS and Independent Distribution
+The trusted release itself is never modified.
 
-Content-addressed systems such as IPFS can be useful for independent
-frontend distribution.
+##  Independent Frontend Recovery
 
-The conceptual architecture is:
+If the normal frontend delivery path is unavailable or compromised, PS2 can retrieve the authorized release from an independent source.
 
-                 Authorized Release
-                         │
-            ┌────────────┼────────────┐
-            ▼            ▼            ▼
-          HTTPS         IPFS        Backup
-            │            │            │
-            └────────────┼────────────┘
-                         ▼
-                   PS2 Verifier
-                         │
-                 SHA-256 + Sigstore
-                         │
-                         ▼
-                       TRUST
+The recovered frontend is **not automatically trusted**.
+
+PS2 verifies:
+
+1. SHA-256 digest
+2. Sigstore signature
+3. Fulcio certificate
+4. Signer identity
+5. Certificate issuer
+6. Rekor transparency evidence
+
+Only a successful cryptographic verification results in a trusted frontend.
+
+## IPFS and Independent Distribution
+
+Content-addressed systems such as IPFS can provide an additional independent distribution path for frontend releases.
 
 The important principle is:
 
-Distribution and authenticity are separate concerns.
+> **Distribution and authenticity are separate concerns.**
 
-IPFS can provide content-addressed availability, but PS2 still uses
-cryptographic verification to establish trust.
+IPFS can provide content-addressed availability, while PS2 uses SHA-256 and Sigstore verification to establish authenticity.
 
-### 3. Recovery
+PS2's security model does not rely on IPFS alone.
 
-PS2 can retrieve the authorized release from an independent source, verify it again, and restore the trusted frontend.
+##  Multi-RPC Verification
 
-##  Additional Security
+PS2 uses multiple independent Ethereum Sepolia RPC providers for blockchain reads.
 
-*  **Keyless Sigstore signing**
-*  **Rekor transparency verification**
-*  **Browser extension wallet gate**
+Configured RPC providers:
+
+* PublicNode
+* ETHPandaOps
+* Tenderly
+
+PS2 compares responses to detect:
+
+* RPC failures
+* inconsistent results
+* lack of consensus
+
+Normal differences in block height are handled separately from actual data inconsistencies.
+
+### Transaction Flow
+
+MetaMask remains responsible for signing and broadcasting transactions.
+
+PS2 does **not** handle private keys or seed phrases.
+
+After MetaMask returns a transaction hash, PS2 independently checks the transaction receipt across multiple RPC providers.
+
+Possible states:
+
+```text
+PENDING
+CONFIRMED
+REVERTED
+RECEIPT_INCONSISTENT
+```
+
+##  Verification Tests
+
+##  Security Properties
+
+* **Keyless Sigstore signing**
+* **Fulcio certificate verification**
+* **Rekor transparency verification**
+* **SHA-256 release integrity**
+* **Browser extension wallet gate**
+* **Fail-closed verification**
 * **Independent frontend recovery**
-*  **Multi-RPC consensus**
-*  **Independent transaction receipt verification**
-*  **Automated verification tests**
-*  **No private keys handled by PS2**
+* **Multi-RPC consensus**
+* **Independent transaction receipt verification**
+* **No private keys handled by PS2**
 
 ## ⛓️ Network
 
 **Ethereum Sepolia**
 
-Chain ID: `11155111`
+Chain ID:
 
-Contract:
+```text
+11155111
+```
 
-`0xaf8ce8203A15795cAA6C92b10B10e351c05dBb0F`
+### PS2Counter Contract
+
+```text
+0xaf8ce8203A15795cAA6C92b10B10e351c05dBb0F
+```
 
 ## Public Sigstore Evidence
 
@@ -270,13 +208,33 @@ Release digest:
 2400c6017562583ca99830790a6bdf5b7dcd3e1f4864c5b41aa921bddad086d2
 ```
 
-View public transparency evidence:
+Public Sigstore transparency search:
 
 https://search.sigstore.dev/
 
-##  Core Idea
+Search using:
+
+```text
+sha256:2400c6017562583ca99830790a6bdf5b7dcd3e1f4864c5b41aa921bddad086d2
+```
+
+## Live Demo
+
+The live demonstration shows:
+
+1. **Legitimate frontend** → verification succeeds.
+2. **Modified frontend** → digest mismatch is detected.
+3. **Wallet protection** → unverified frontend is blocked.
+4. **Frontend recovery** → authorized release is independently recovered and verified.
+5. **Multi-RPC verification** → blockchain data is compared across multiple providers.
+6. **Transaction verification** → MetaMask transaction receipt is independently verified.
+
+## Core Idea
 
 > **Don't trust the website just because HTTPS works. Verify the frontend before trusting the wallet interaction.**
 
 **PS2 turns frontend provenance into a security boundary for Web3 wallets.**
-MADE BY TEAM VERENCE
+
+---
+
+### MADE BY TEAM VERENCE
