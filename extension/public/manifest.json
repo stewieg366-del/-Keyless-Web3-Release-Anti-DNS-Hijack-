@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "PS2 Verifier",
+  "version": "1.0.0",
+  "description": "Cryptographically verifies Web3 frontends via Sigstore.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "PS2 Verifier"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>", "http://localhost:3000/*", "http://localhost:5173/*"],
+      "js": ["src/content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/inject.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
