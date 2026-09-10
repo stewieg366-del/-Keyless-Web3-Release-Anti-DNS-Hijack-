@@ -1,6 +1,6 @@
 # 🔐 Keyless Web3 Release — Anti-DNS Hijack
 
-**PS2** is a Web3 security system that cryptographically verifies a dApp frontend **before allowing wallet interaction**.
+**VERENCE** is a Web3 security system that cryptographically verifies a dApp frontend **before allowing wallet interaction**.
 
 ## Problem
 
@@ -8,9 +8,9 @@ A DNS or hosting compromise can replace a legitimate Web3 frontend with a malici
 
 **HTTPS alone does not prove that the frontend is the authorized release.**
 
-##  PS2 Architecture
+##  VERENCE Architecture
 
-PS2 separates frontend delivery from frontend authenticity and wallet authorization.
+VERENCE separates frontend delivery from frontend authenticity and wallet authorization.
 
 ```mermaid
 flowchart TD
@@ -56,7 +56,7 @@ flowchart TD
 
 ### Security Model
 
-PS2 uses a **browser-extension-controlled, fail-closed wallet gate**.
+VERENCE uses a **browser-extension-controlled, fail-closed wallet gate**.
 
 If the frontend cannot be cryptographically verified, wallet interaction is blocked before the request reaches MetaMask.
 
@@ -66,7 +66,7 @@ The verification states are:
 * **INVALID** → frontend is rejected and wallet interaction is blocked.
 * **UNKNOWN** → verification could not be established, so wallet interaction remains blocked.
 
-##  How PS2 Stops a Frontend Attack
+##  How VERENCE Stops a Frontend Attack
 
 ### 1. Legitimate Frontend
 
@@ -79,6 +79,8 @@ Rekor: VERIFIED
 ```
 
 The frontend's SHA-256 digest must match the trusted release metadata.
+![VERENCE Legitimate Frontend Verification(Backend)](releases/v0.1.0/OFFICIAL%20RELEASE%20VERIFICATON.png)
+![VERENCE Legitimate Frontend Verification(Backend)](releases/v0.1.0/FRONTEND%20RESTORE(IPFS).png)
 
 ### 2. Simulated DNS / Hosting Attack
 
@@ -96,7 +98,7 @@ The modified frontend produces a different SHA-256 digest:
 Expected digest ≠ Actual digest
 ```
 
-PS2 detects the mismatch and blocks wallet interaction:
+VERENCE detects the mismatch and blocks wallet interaction:
 
 ```text
 FRONTEND VERIFICATION FAILED
@@ -104,6 +106,7 @@ DO NOT CONNECT YOUR WALLET.
 ```
 
 The trusted release itself is never modified.
+![HACKED VERSION](releases/v0.1.0/HACKED_VERSION.png)
 
 ##  Independent Frontend Recovery
 
@@ -111,7 +114,7 @@ If the normal frontend delivery path is unavailable or compromised, PS2 can retr
 
 The recovered frontend is **not automatically trusted**.
 
-PS2 verifies:
+VERENCE verifies:
 
 1. SHA-256 digest
 2. Sigstore signature
@@ -132,7 +135,7 @@ The important principle is:
 
 IPFS can provide content-addressed availability, while PS2 uses SHA-256 and Sigstore verification to establish authenticity.
 
-PS2's security model does not rely on IPFS alone.
+VERENCE's security model does not rely on IPFS alone.
 
 ##  Multi-RPC Verification
 
@@ -144,7 +147,7 @@ Configured RPC providers:
 * ETHPandaOps
 * Tenderly
 
-PS2 compares responses to detect:
+VERENCE compares responses to detect:
 
 * RPC failures
 * inconsistent results
@@ -156,7 +159,7 @@ Normal differences in block height are handled separately from actual data incon
 
 MetaMask remains responsible for signing and broadcasting transactions.
 
-PS2 does **not** handle private keys or seed phrases.
+VERENCE does **not** handle private keys or seed phrases.
 
 After MetaMask returns a transaction hash, PS2 independently checks the transaction receipt across multiple RPC providers.
 
